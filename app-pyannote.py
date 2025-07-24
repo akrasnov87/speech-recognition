@@ -5,6 +5,7 @@ from faster_whisper import WhisperModel
 import glob
 import os
 import logging
+import json
 
 ENV_PATH=os.environ.get('ENV_PATH') if os.environ.get('ENV_PATH') != None else '.env'
 
@@ -99,6 +100,13 @@ SECOND_CHUNK_LENGTH=CHUNK_LENGTH / 1000
 
 speakers = get_speakers(PATH_MASK, HF_TOKEN, SECOND_CHUNK_LENGTH, num_speakers=NUM_SPEAKERS)
 
+SPEAKES_FILE_PATH=f"{os.path.join(DIR, f'{FILE_NAME}-speakers.txt')}"
+
+with open(SPEAKES_FILE_PATH, "w", encoding="utf-8") as f:
+    line = json.dumps(speakers, indent=4)
+    f.write(line)
+    #logging.info(line.strip())
+
 # 3. распознавание
 
 def seconds_to_hms(seconds):
@@ -112,21 +120,17 @@ TXT_FILE_PATH=f"{os.path.join(DIR, f'{FILE_NAME}.txt')}"
 whisper_model = WhisperModel(WHISPER_MODEL, device="cpu", compute_type="int8")
 
 with open(TXT_FILE_PATH, "w", encoding="utf-8") as f:
+    speaker = 'unknown'
     # ASR
     segments, _ = whisper_model.transcribe(WAV_FILE_PATH, vad_filter=True, language="ru", beam_size=5, chunk_length=30)
     for segment in segments:
         start = segment.start
         end = segment.end
 
-        speaker = None
-
         for s in speakers:
             if s.get('start') != None and s.get('start') >= start:
                 speaker = s.get('speaker')
                 break
-        
-        if speaker == None:
-            speaker = 'unknown'
 
         line = f"{speaker} [{seconds_to_hms(start)} → {seconds_to_hms(end)}]: {segment.text}\n"
         f.write(line)

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+huggingface-cli login --token $HF_TOKEN
+
 if [ -n "$VIDEO_FILE" ]; then
     ffmpeg -i $VIDEO_FILE $WAV_FILE_PATH
 fi
