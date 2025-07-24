@@ -2,4 +2,6 @@ speech
 data
 __pycache__
 temp
-.env
+.env*
+whisper
+!datasets/*.mp4

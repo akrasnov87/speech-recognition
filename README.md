@@ -39,12 +39,12 @@ ffmpeg -i music.mp3 audio.wav
 
 ## Docker
 
-### Сборка
-`docker build -t akrasnov87/audio2text:0.0.1 .`
+### Сборка whisper
+`docker build --build-arg MODE=whisper -t akrasnov87/video2text:whisper-0.0.1 .`
 
-### Использование
+#### Использование
 <pre>
-docker run -it --rm --env-file ./.env --name audio2text -v ./data:/data:rw akrasnov87/audio2text:0.0.1
+docker run -it --rm --env-file ./.env.whisper --name video2text -v ./data:/data:rw akrasnov87/video2text:whisper-0.0.1
 </pre>
 
 ### Переменные
