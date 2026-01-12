@@ -73,3 +73,29 @@ WHISPER_MODEL='medium'
 CHUNK_LENGTH=300000
 HF_TOKEN='**********'
 </pre>
+
+## Запросы
+
+__Скачивание файла с сервера__
+
+`GET /download/<year>/<month>/<day>/<name>`, где:
+* year - год
+* month - месяц
+* day - день
+* name - имя файла для скачивания (обычно txt-файл)
+
+__Выполнение задачи__
+
+`GET /run/<year>/<month>/<day>/<name>`, где:
+* year - год
+* month - месяц
+* day - день
+* name - имя видео-файла
+
+__Загрузка на сервер__
+
+`POST /upload`, где в теле передать file с расширением *.mp4, *.mkv, *.webm
+
+__Проверка доступности сервера__
+
+`GET /health_check`
