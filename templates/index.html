@@ -12,6 +12,7 @@
             --secondary-color: #7c3aed;
             --success-color: #10b981;
             --info-color: #3b82f6;
+            --warning-color: #f59e0b;
         }
         
         body {
@@ -57,17 +58,6 @@
             padding: 10px 25px;
             border-radius: 8px;
             font-weight: 600;
-        }
-        
-        .progress {
-            height: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-        
-        .progress-bar {
-            background: linear-gradient(90deg, var(--info-color), #60a5fa);
-            border-radius: 10px;
         }
         
         .status-card {
@@ -169,10 +159,219 @@
             color: var(--info-color);
         }
         
+        .status-warning {
+            color: var(--warning-color);
+        }
+        
         .action-buttons {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+        }
+        
+        /* Стили для отображения прогресса транскрибации */
+        .transcription-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .current-segment-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--info-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .current-segment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .segment-time {
+            font-size: 14px;
+            color: #94a3b8;
+            font-family: 'Consolas', monospace;
+        }
+        
+        .segment-progress {
+            font-size: 12px;
+            background: rgba(255,255,255,0.1);
+            padding: 3px 8px;
+            border-radius: 12px;
+        }
+        
+        .segment-text {
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0;
+        }
+        
+        .transcription-history {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #0f172a;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #334155;
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .history-title {
+            color: #e2e8f0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .history-count {
+            background: var(--info-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .history-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            border-left: 3px solid var(--info-color);
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .history-time {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+            font-family: 'Consolas', monospace;
+        }
+        
+        .history-text {
+            font-size: 13px;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+        
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--info-color);
+            border-radius: 50%;
+            animation: pulseDot 1.5s infinite;
+        }
+        
+        @keyframes pulseDot {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+        }
+        
+        .timestamp-badge {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+        }
+        
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .auto-scroll-btn {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        
+        .auto-scroll-btn:hover {
+            transform: scale(1.1);
         }
         
         @media (max-width: 768px) {
@@ -182,6 +381,18 @@
             
             .upload-area {
                 padding: 20px;
+            }
+            
+            .transcription-history {
+                max-height: 200px;
+            }
+            
+            .current-segment-card {
+                padding: 15px;
+            }
+            
+            .segment-text {
+                font-size: 14px;
             }
         }
     </style>
@@ -273,6 +484,79 @@
                             </div>
                         </div>
                         
+                        <!-- Прогресс транскрибации -->
+                        <div id="transcriptionProgressSection" class="d-none">
+                            <div class="transcription-container">
+                                <!-- Текущий обрабатываемый сегмент -->
+                                <div class="current-segment-card" id="currentSegmentCard">
+                                    <div class="current-segment-header">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="pulse-dot"></span>
+                                            <span id="segmentStatus">Обрабатывается текущий сегмент</span>
+                                        </div>
+                                        <div class="segment-progress" id="segmentProgress">
+                                            <span id="processedCount">0</span>/<span id="totalSegments">?</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <i class="fas fa-clock text-info"></i>
+                                            <span class="segment-time" id="currentTimeRange">00:00:00 → 00:00:00</span>
+                                            <span class="timestamp-badge" id="currentTimestamp">00:00:00</span>
+                                        </div>
+                                        <p class="segment-text" id="currentSegmentText">
+                                            Ожидание данных транскрибации...
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="status-indicator">
+                                        <i class="fas fa-sync-alt fa-spin"></i>
+                                        <small>Идет обработка...</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- История обработанных сегментов -->
+                                <div class="transcription-history" id="transcriptionHistory">
+                                    <div class="history-header">
+                                        <span class="history-title">История транскрибации</span>
+                                        <span class="history-count" id="historyCount">0</span>
+                                    </div>
+                                    <div id="historyItems">
+                                        <!-- История будет добавляться здесь -->
+                                        <div class="text-center py-3">
+                                            <p class="text-muted mb-0">Здесь будут появляться обработанные сегменты</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Статистика -->
+                                <div class="progress-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="statsTotalSegments">0</span>
+                                        <span class="stat-label">Сегментов</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="statsTotalLines">0</span>
+                                        <span class="stat-label">Строк</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="statsProgress">0%</span>
+                                        <span class="stat-label">Прогресс</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-value" id="statsDuration">0с</span>
+                                        <span class="stat-label">Время</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Кнопка автоскролла -->
+                            <button class="auto-scroll-btn d-none" id="autoScrollBtn" title="Прокрутить к последней строке">
+                                <i class="fas fa-arrow-down"></i>
+                            </button>
+                        </div>
+                        
                         <!-- Статус транскрибации -->
                         <div id="transcribeProgress" class="d-none">
                             <div class="status-card">
@@ -353,6 +637,11 @@
         let currentFile = null;
         let uploadedFileData = null;
         let history = [];
+        let progressInterval = null;
+        let autoScrollEnabled = true;
+        let currentFileId = null;
+        let processedSegments = [];
+        let currentSegment = null;
         
         // Элементы DOM
         const uploadArea = document.getElementById('uploadArea');
@@ -373,6 +662,23 @@
         const downloadBtn = document.getElementById('downloadBtn');
         const newFileBtn = document.getElementById('newFileBtn');
         const historyList = document.getElementById('historyList');
+        const transcriptionProgressSection = document.getElementById('transcriptionProgressSection');
+        const transcriptionHistory = document.getElementById('transcriptionHistory');
+        const historyItems = document.getElementById('historyItems');
+        const historyCount = document.getElementById('historyCount');
+        const currentSegmentCard = document.getElementById('currentSegmentCard');
+        const segmentStatus = document.getElementById('segmentStatus');
+        const segmentProgress = document.getElementById('segmentProgress');
+        const processedCount = document.getElementById('processedCount');
+        const totalSegments = document.getElementById('totalSegments');
+        const currentTimeRange = document.getElementById('currentTimeRange');
+        const currentTimestamp = document.getElementById('currentTimestamp');
+        const currentSegmentText = document.getElementById('currentSegmentText');
+        const autoScrollBtn = document.getElementById('autoScrollBtn');
+        const statsTotalSegments = document.getElementById('statsTotalSegments');
+        const statsTotalLines = document.getElementById('statsTotalLines');
+        const statsProgress = document.getElementById('statsProgress');
+        const statsDuration = document.getElementById('statsDuration');
         
         // Обновление шагов
         function updateStep(stepId, completed) {
@@ -424,6 +730,213 @@
                 `;
                 historyList.appendChild(itemEl);
             });
+        }
+        
+        // Парсинг строки сегмента для извлечения времени и текста
+        function parseSegmentLine(line) {
+            const timeMatch = line.match(/\[(.*?)\s→\s(.*?)\]:\s*(.*)/);
+            if (timeMatch) {
+                return {
+                    startTime: timeMatch[1],
+                    endTime: timeMatch[2],
+                    text: timeMatch[3],
+                    fullLine: line,
+                    timestamp: timeMatch[1] // Используем время начала как метку
+                };
+            }
+            return {
+                startTime: '00:00:00',
+                endTime: '00:00:00',
+                text: line,
+                fullLine: line,
+                timestamp: '00:00:00'
+            };
+        }
+        
+        // Форматирование времени для отображения
+        function formatTimeDisplay(startTime, endTime) {
+            return `${startTime} → ${endTime}`;
+        }
+        
+        // Получение прогресса транскрибации
+        async function getTranscriptionProgress() {
+            if (!currentFileId) return null;
+            
+            try {
+                const response = await fetch(`/api/progress/${encodeURIComponent(currentFileId)}`);
+                if (response.ok) {
+                    return await response.json();
+                }
+            } catch (error) {
+                console.error('Ошибка получения прогресса:', error);
+            }
+            
+            return null;
+        }
+        
+        // Отображение текущего сегмента
+        function displayCurrentSegment(segment) {
+            if (!segment) {
+                currentSegmentText.textContent = 'Ожидание данных транскрибации...';
+                currentTimeRange.textContent = '00:00:00 → 00:00:00';
+                currentTimestamp.textContent = '00:00:00';
+                return;
+            }
+            
+            const parsed = parseSegmentLine(segment);
+            
+            // Обновляем информацию о текущем сегменте
+            currentSegmentText.textContent = parsed.text;
+            currentTimeRange.textContent = formatTimeDisplay(parsed.startTime, parsed.endTime);
+            currentTimestamp.textContent = parsed.startTime;
+            
+            // Сохраняем текущий сегмент
+            currentSegment = parsed;
+            
+            // Добавляем сегмент в историю, если его там еще нет
+            if (!processedSegments.some(s => s.fullLine === segment)) {
+                processedSegments.push(parsed);
+                updateHistoryDisplaySection();
+            }
+        }
+        
+        // Отображение истории сегментов
+        function updateHistoryDisplaySection() {
+            historyItems.innerHTML = '';
+            historyCount.textContent = processedSegments.length;
+            
+            if (processedSegments.length === 0) {
+                historyItems.innerHTML = `
+                    <div class="text-center py-3">
+                        <p class="text-muted mb-0">Здесь будут появляться обработанные сегменты</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Отображаем последние 20 сегментов (новые сверху)
+            const recentSegments = processedSegments.slice(-20).reverse();
+            
+            recentSegments.forEach(segment => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div class="history-time">
+                        <i class="far fa-clock me-1"></i>
+                        ${segment.startTime} → ${segment.endTime}
+                    </div>
+                    <div class="history-text">${segment.text}</div>
+                `;
+                historyItems.appendChild(historyItem);
+            });
+            
+            // Автоматическая прокрутка к последнему элементу
+            if (autoScrollEnabled) {
+                transcriptionHistory.scrollTop = 0;
+            }
+            
+            // Показываем кнопку автоскролла если пользователь прокрутил
+            const isScrolledToTop = transcriptionHistory.scrollTop <= 50;
+            
+            if (!isScrolledToTop) {
+                autoScrollBtn.classList.remove('d-none');
+            } else {
+                autoScrollBtn.classList.add('d-none');
+            }
+        }
+        
+        // Отображение прогресса транскрибации
+        function displayTranscriptionProgress(progressData) {
+            if (!progressData) return;
+            
+            // Обновляем статус
+            let statusText = 'Ожидание запуска...';
+            let statusColor = 'var(--warning-color)';
+            
+            switch (progressData.status) {
+                case 'processing':
+                    statusText = 'Обрабатывается текущий сегмент';
+                    statusColor = 'var(--info-color)';
+                    break;
+                case 'completed':
+                    statusText = 'Транскрибация завершена';
+                    statusColor = 'var(--success-color)';
+                    break;
+                case 'error':
+                    statusText = `Ошибка: ${progressData.error_message || 'Неизвестная ошибка'}`;
+                    statusColor = '#ef4444';
+                    break;
+                case 'pending':
+                    statusText = 'Ожидание запуска...';
+                    statusColor = 'var(--warning-color)';
+                    break;
+            }
+            
+            segmentStatus.textContent = statusText;
+            currentSegmentCard.style.borderLeftColor = statusColor;
+            
+            // Обновляем счетчики
+            const processed = progressData.processed_segments || 0;
+            const total = progressData.total_segments || '?';
+            
+            processedCount.textContent = processed;
+            totalSegments.textContent = total;
+            
+            // Обновляем статистику
+            statsTotalSegments.textContent = total;
+            statsTotalLines.textContent = progressData.total_lines || 0;
+            statsProgress.textContent = progressData.progress ? `${progressData.progress}%` : '0%';
+            
+            // Если есть данные о времени обработки
+            if (progressData.duration) {
+                const minutes = Math.floor(progressData.duration / 60);
+                const seconds = Math.floor(progressData.duration % 60);
+                statsDuration.textContent = `${minutes > 0 ? `${minutes}м ` : ''}${seconds}с`;
+            }
+            
+            // Отображаем последний обработанный сегмент
+            if (progressData.lines && progressData.lines.length > 0) {
+                const lastLine = progressData.lines[progressData.lines.length - 1];
+                displayCurrentSegment(lastLine);
+            }
+            
+            // Если транскрибация завершена, показываем результат
+            if (progressData.status === 'completed' && progressData.download_url) {
+                handleTranscriptionSuccess(progressData);
+            }
+            
+            // Если произошла ошибка
+            if (progressData.status === 'error') {
+                handleTranscriptionError(progressData.error_message);
+            }
+        }
+        
+        // Запуск обновления прогресса
+        function startProgressUpdates() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+            
+            // Обновляем каждую секунду
+            progressInterval = setInterval(async () => {
+                const progressData = await getTranscriptionProgress();
+                if (progressData) {
+                    displayTranscriptionProgress(progressData);
+                    
+                    // Если транскрибация завершена или произошла ошибка, останавливаем обновление
+                    if (progressData.status === 'completed' || progressData.status === 'error') {
+                        stopProgressUpdates();
+                    }
+                }
+            }, 5000);
+        }
+        
+        // Остановка обновления прогресса
+        function stopProgressUpdates() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
         }
         
         // Обработка выбора файла
@@ -494,7 +1007,6 @@
                 return;
             }
             
-            // Проверка размера файла (2GB = 2 * 1024 * 1024 * 1024)
             const maxSize = 2 * 1024 * 1024 * 1024;
             if (currentFile.size > maxSize) {
                 alert('Файл слишком большой. Максимальный размер: 2GB');
@@ -504,16 +1016,12 @@
             const formData = new FormData();
             formData.append('file', currentFile);
             
-            // Показываем прогресс
             uploadProgress.classList.remove('d-none');
             uploadProgressBar.style.width = '0%';
             uploadPercent.textContent = '0%';
-            
-            // Отключаем кнопку загрузки
             uploadBtn.disabled = true;
             
             try {
-                // Создаем XMLHttpRequest для отслеживания прогресса
                 const xhr = new XMLHttpRequest();
                 
                 xhr.upload.addEventListener('progress', function(e) {
@@ -546,23 +1054,16 @@
         }
         
         function handleUploadSuccess(response) {
-            // Скрываем прогресс
             uploadProgress.classList.add('d-none');
-            
-            // Обновляем информацию
             uploadedFileData = response;
+            currentFileId = response.file_id;
             
-            // Показываем кнопки действий
             actionButtons.classList.remove('d-none');
             uploadedFileInfo.textContent = 
                 `${response.original_filename} (${response.file_size_mb} MB)`;
             
-            // Обновляем шаги
             updateStep('step-upload', true);
-            
             addToHistory('Загрузка', `Файл загружен: ${response.original_filename}`);
-            
-            // Скрываем информацию о файле
             fileInfo.classList.add('d-none');
         }
         
@@ -588,12 +1089,21 @@
                 return;
             }
             
-            // Показываем прогресс транскрибации
+            // Сбрасываем данные предыдущей транскрибации
+            processedSegments = [];
+            currentSegment = null;
+            
+            // Показываем секцию прогресса
+            transcriptionProgressSection.classList.remove('d-none');
+            
+            // Показываем индикатор загрузки
             transcribeProgress.classList.remove('d-none');
             actionButtons.classList.add('d-none');
             
             // Обновляем шаги
             updateStep('step-transcribe', false);
+            
+            addToHistory('Транскрибация', 'Запущена транскрибация файла');
             
             try {
                 const response = await fetch('/api/run', {
@@ -603,16 +1113,32 @@
                     },
                     body: JSON.stringify({
                         unique_filename: uploadedFileData.unique_filename,
-                        date_folder: uploadedFileData.date_folder
+                        date_folder: uploadedFileData.date_folder,
+                        file_id: currentFileId
                     })
                 });
                 
-                if (response.ok) {
+                if (response.status === 202) {
+                    // Транскрибация запущена
                     const result = await response.json();
-                    handleTranscriptionSuccess(result);
+                    
+                    // Скрываем индикатор загрузки
+                    transcribeProgress.classList.add('d-none');
+                    
+                    // Запускаем обновление прогресса
+                    startProgressUpdates();
+                    
+                    // Сразу запрашиваем начальный прогресс
+                    setTimeout(async () => {
+                        const progressData = await getTranscriptionProgress();
+                        if (progressData) {
+                            displayTranscriptionProgress(progressData);
+                        }
+                    }, 500);
+                    
                 } else {
                     const error = await response.json();
-                    throw new Error(error.error || 'Ошибка транскрибации');
+                    throw new Error(error.error || 'Ошибка запуска транскрибации');
                 }
                 
             } catch (error) {
@@ -620,13 +1146,17 @@
             }
         }
         
-        function handleTranscriptionSuccess(result) {
-            // Скрываем прогресс
-            transcribeProgress.classList.add('d-none');
+        function handleTranscriptionSuccess(progressData) {
+            // Останавливаем обновление прогресса
+            stopProgressUpdates();
+            
+            // Обновляем статус сегмента
+            segmentStatus.textContent = 'Транскрибация завершена';
+            currentSegmentCard.style.borderLeftColor = 'var(--success-color)';
             
             // Сохраняем данные для скачивания
-            uploadedFileData.txt_filename = result.txt_filename;
-            uploadedFileData.download_url = result.download_url;
+            uploadedFileData.txt_filename = progressData.txt_filename;
+            uploadedFileData.download_url = progressData.download_url;
             
             // Показываем результат
             resultSection.classList.remove('d-none');
@@ -639,11 +1169,21 @@
         }
         
         function handleTranscriptionError(error) {
+            // Останавливаем обновление прогресса
+            stopProgressUpdates();
+            
             transcribeProgress.classList.add('d-none');
             actionButtons.classList.remove('d-none');
             
-            alert('Ошибка при транскрибации: ' + error.message);
-            addToHistory('Транскрибация', error.message, false);
+            const errorMessage = typeof error === 'string' ? error : 
+                               error.message || 'Неизвестная ошибка транскрибации';
+            
+            // Обновляем статус сегмента
+            segmentStatus.textContent = `Ошибка: ${errorMessage}`;
+            currentSegmentCard.style.borderLeftColor = '#ef4444';
+            
+            alert('Ошибка при транскрибации: ' + errorMessage);
+            addToHistory('Транскрибация', errorMessage, false);
         }
         
         // Скачивание результата
@@ -655,7 +1195,6 @@
                 return;
             }
             
-            // Создаем временную ссылку для скачивания
             const link = document.createElement('a');
             link.href = uploadedFileData.download_url;
             link.download = uploadedFileData.txt_filename;
@@ -663,9 +1202,7 @@
             link.click();
             document.body.removeChild(link);
             
-            // Обновляем шаги
             updateStep('step-download', true);
-            
             addToHistory('Скачивание', `Скачан файл: ${uploadedFileData.txt_filename}`);
         }
         
@@ -674,15 +1211,61 @@
         cancelBtn.addEventListener('click', startNewUpload);
         
         function startNewUpload() {
+            // Останавливаем обновление прогресса
+            stopProgressUpdates();
+            
+            // Очищаем прогресс на сервере
+            if (currentFileId) {
+                fetch('/api/cleanup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        file_id: currentFileId
+                    })
+                }).catch(() => {}); // Игнорируем ошибки очистки
+            }
+            
             // Сброс состояния
             currentFile = null;
             uploadedFileData = null;
+            currentFileId = null;
+            autoScrollEnabled = true;
+            processedSegments = [];
+            currentSegment = null;
             
             // Скрываем все элементы
             fileInfo.classList.add('d-none');
             actionButtons.classList.add('d-none');
             resultSection.classList.add('d-none');
             transcribeProgress.classList.add('d-none');
+            transcriptionProgressSection.classList.add('d-none');
+            
+            // Сбрасываем отображение текущего сегмента
+            currentSegmentText.textContent = 'Ожидание данных транскрибации...';
+            currentTimeRange.textContent = '00:00:00 → 00:00:00';
+            currentTimestamp.textContent = '00:00:00';
+            segmentStatus.textContent = 'Обрабатывается текущий сегмент';
+            currentSegmentCard.style.borderLeftColor = 'var(--info-color)';
+            
+            // Сбрасываем историю
+            historyItems.innerHTML = `
+                <div class="text-center py-3">
+                    <p class="text-muted mb-0">Здесь будут появляться обработанные сегменты</p>
+                </div>
+            `;
+            historyCount.textContent = '0';
+            
+            // Сбрасываем статистику
+            statsTotalSegments.textContent = '0';
+            statsTotalLines.textContent = '0';
+            statsProgress.textContent = '0%';
+            statsDuration.textContent = '0с';
+            
+            // Сбрасываем счетчики
+            processedCount.textContent = '0';
+            totalSegments.textContent = '?';
             
             // Сбрасываем шаги
             updateStep('step-upload', false);
@@ -694,6 +1277,26 @@
             
             addToHistory('Система', 'Начата новая загрузка');
         }
+        
+        // Обработка автоскролла
+        autoScrollBtn.addEventListener('click', function() {
+            transcriptionHistory.scrollTop = 0;
+            autoScrollBtn.classList.add('d-none');
+            autoScrollEnabled = true;
+        });
+        
+        // Отслеживание прокрутки пользователя в истории
+        transcriptionHistory.addEventListener('scroll', function() {
+            const isScrolledToTop = this.scrollTop <= 50;
+            
+            if (!isScrolledToTop) {
+                autoScrollEnabled = false;
+                autoScrollBtn.classList.remove('d-none');
+            } else {
+                autoScrollEnabled = true;
+                autoScrollBtn.classList.add('d-none');
+            }
+        });
         
         // Проверка статуса сервера
         async function checkServerStatus() {
