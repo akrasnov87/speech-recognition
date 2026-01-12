@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Видео транскрибация</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #7c3aed;
+            --success-color: #10b981;
+            --info-color: #3b82f6;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        
+        .card-header {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 1.5rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(90deg, var(--success-color), #34d399);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        .progress {
+            height: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, var(--info-color), #60a5fa);
+            border-radius: 10px;
+        }
+        
+        .status-card {
+            background: #f8fafc;
+            border-left: 4px solid var(--info-color);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        
+        .file-info {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--info-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .step.completed .step-number {
+            background: var(--success-color);
+        }
+        
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .upload-area {
+            border: 3px dashed #cbd5e1;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: #f1f5f9;
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--success-color);
+            background: #f0fdf4;
+        }
+        
+        .file-icon {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        
+        .status-icon {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+        
+        .status-success {
+            color: var(--success-color);
+        }
+        
+        .status-error {
+            color: #ef4444;
+        }
+        
+        .status-processing {
+            color: var(--info-color);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .upload-area {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h2 class="mb-0"><i class="fas fa-microphone-alt me-2"></i>Видео транскрибация</h2>
+                        <p class="mb-0 mt-2 opacity-75">Преобразуйте видео в текст с временными метками</p>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <!-- Шаги процесса -->
+                        <div class="mb-4">
+                            <div class="step completed">
+                                <div class="step-number">1</div>
+                                <div>
+                                    <h5 class="mb-1">Выберите видео файл</h5>
+                                    <p class="text-muted mb-0">Загрузите видео для транскрибации</p>
+                                </div>
+                            </div>
+                            
+                            <div class="step" id="step-upload">
+                                <div class="step-number">2</div>
+                                <div>
+                                    <h5 class="mb-1">Загрузка файла</h5>
+                                    <p class="text-muted mb-0" id="upload-status">Ожидание загрузки файла</p>
+                                </div>
+                            </div>
+                            
+                            <div class="step" id="step-transcribe">
+                                <div class="step-number">3</div>
+                                <div>
+                                    <h5 class="mb-1">Транскрибация</h5>
+                                    <p class="text-muted mb-0" id="transcribe-status">Ожидание запуска транскрибации</p>
+                                </div>
+                            </div>
+                            
+                            <div class="step" id="step-download">
+                                <div class="step-number">4</div>
+                                <div>
+                                    <h5 class="mb-1">Скачивание результата</h5>
+                                    <p class="text-muted mb-0" id="download-status">Результат будет доступен для скачивания</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Область загрузки -->
+                        <div class="upload-area mb-4" id="uploadArea">
+                            <div class="file-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <h4>Перетащите файл сюда или кликните для выбора</h4>
+                            <p class="text-muted">Поддерживаемые форматы: MP4, MKV, WEBM, MP3, WAV</p>
+                            <input type="file" id="fileInput" class="d-none" accept=".mp4,.mkv,.webm,.mp3,.wav,.m4a">
+                            <button class="btn btn-primary mt-3" onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-folder-open me-2"></i>Выбрать файл
+                            </button>
+                        </div>
+                        
+                        <!-- Информация о файле -->
+                        <div id="fileInfo" class="file-info d-none">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h5 id="fileName"></h5>
+                                    <p class="mb-0 text-muted" id="fileDetails"></p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="action-buttons justify-content-end">
+                                        <button id="uploadBtn" class="btn btn-primary">
+                                            <i class="fas fa-upload me-2"></i>Загрузить
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Прогресс загрузки -->
+                        <div id="uploadProgress" class="d-none">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Загрузка файла...</span>
+                                <span id="uploadPercent">0%</span>
+                            </div>
+                            <div class="progress">
+                                <div id="uploadProgressBar" class="progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Статус транскрибации -->
+                        <div id="transcribeProgress" class="d-none">
+                            <div class="status-card">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-cog fa-spin status-icon status-processing"></i>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">Идет транскрибация...</h6>
+                                        <p class="mb-0 text-muted" id="transcribeMessage">Обработка видео файла</p>
+                                    </div>
+                                    <div class="loader"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Кнопки действий после загрузки -->
+                        <div id="actionButtons" class="d-none mt-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-1">Файл загружен!</h5>
+                                    <p class="text-muted mb-0" id="uploadedFileInfo"></p>
+                                </div>
+                                <div class="action-buttons">
+                                    <button id="transcribeBtn" class="btn btn-success">
+                                        <i class="fas fa-play me-2"></i>Запустить транскрибацию
+                                    </button>
+                                    <button id="cancelBtn" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Отмена
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Результат транскрибации -->
+                        <div id="resultSection" class="d-none mt-4">
+                            <div class="status-card">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle status-icon status-success"></i>
+                                    <div class="flex-grow-1">
+                                        <h5 class="mb-1">Транскрибация завершена!</h5>
+                                        <p class="mb-0 text-muted" id="resultMessage">Текст готов к скачиванию</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <button id="downloadBtn" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-download me-2"></i>Скачать текст
+                                </button>
+                                <button id="newFileBtn" class="btn btn-outline-primary btn-lg ms-3">
+                                    <i class="fas fa-plus me-2"></i>Новый файл
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- История операций -->
+                        <div class="mt-5">
+                            <h5><i class="fas fa-history me-2"></i>История операций</h5>
+                            <div id="historyList" class="mt-3">
+                                <!-- История будет добавляться здесь -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Информация о системе -->
+                <div class="text-center mt-4 text-white">
+                    <p class="mb-0 opacity-75">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Сервер транскрибации | Модель: medium | Макс. размер: 2GB
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Глобальные переменные
+        let currentFile = null;
+        let uploadedFileData = null;
+        let history = [];
+        
+        // Элементы DOM
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileDetails = document.getElementById('fileDetails');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const uploadProgressBar = document.getElementById('uploadProgressBar');
+        const uploadPercent = document.getElementById('uploadPercent');
+        const transcribeBtn = document.getElementById('transcribeBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const actionButtons = document.getElementById('actionButtons');
+        const uploadedFileInfo = document.getElementById('uploadedFileInfo');
+        const transcribeProgress = document.getElementById('transcribeProgress');
+        const resultSection = document.getElementById('resultSection');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const newFileBtn = document.getElementById('newFileBtn');
+        const historyList = document.getElementById('historyList');
+        
+        // Обновление шагов
+        function updateStep(stepId, completed) {
+            const step = document.getElementById(stepId);
+            if (completed) {
+                step.classList.add('completed');
+            } else {
+                step.classList.remove('completed');
+            }
+        }
+        
+        // Добавление в историю
+        function addToHistory(type, message, success = true) {
+            const timestamp = new Date().toLocaleTimeString();
+            const historyItem = {
+                id: Date.now(),
+                type,
+                message,
+                success,
+                timestamp
+            };
+            
+            history.unshift(historyItem);
+            
+            // Ограничиваем историю 10 записями
+            if (history.length > 10) {
+                history.pop();
+            }
+            
+            updateHistoryDisplay();
+        }
+        
+        // Обновление отображения истории
+        function updateHistoryDisplay() {
+            historyList.innerHTML = '';
+            
+            history.forEach(item => {
+                const icon = item.success ? 'fa-check-circle text-success' : 'fa-times-circle text-danger';
+                const itemEl = document.createElement('div');
+                itemEl.className = 'status-card mb-2';
+                itemEl.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas ${icon} me-2"></i>
+                            <span class="fw-medium">${item.type}:</span> ${item.message}
+                        </div>
+                        <small class="text-muted">${item.timestamp}</small>
+                    </div>
+                `;
+                historyList.appendChild(itemEl);
+            });
+        }
+        
+        // Обработка выбора файла
+        fileInput.addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                currentFile = this.files[0];
+                displayFileInfo(currentFile);
+            }
+        });
+        
+        // Отображение информации о файле
+        function displayFileInfo(file) {
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            
+            fileName.textContent = file.name;
+            fileDetails.textContent = `Размер: ${fileSizeMB} MB | Тип: ${file.type || 'Неизвестно'}`;
+            fileInfo.classList.remove('d-none');
+            
+            updateStep('step-upload', false);
+            addToHistory('Выбор файла', `Выбран файл: ${file.name}`);
+        }
+        
+        // Drag & Drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            uploadArea.classList.add('dragover');
+        }
+        
+        function unhighlight() {
+            uploadArea.classList.remove('dragover');
+        }
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                currentFile = files[0];
+                displayFileInfo(currentFile);
+            }
+        }
+        
+        // Загрузка файла
+        uploadBtn.addEventListener('click', uploadFile);
+        
+        async function uploadFile() {
+            if (!currentFile) {
+                alert('Пожалуйста, выберите файл');
+                return;
+            }
+            
+            // Проверка размера файла (2GB = 2 * 1024 * 1024 * 1024)
+            const maxSize = 2 * 1024 * 1024 * 1024;
+            if (currentFile.size > maxSize) {
+                alert('Файл слишком большой. Максимальный размер: 2GB');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            
+            // Показываем прогресс
+            uploadProgress.classList.remove('d-none');
+            uploadProgressBar.style.width = '0%';
+            uploadPercent.textContent = '0%';
+            
+            // Отключаем кнопку загрузки
+            uploadBtn.disabled = true;
+            
+            try {
+                // Создаем XMLHttpRequest для отслеживания прогресса
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        uploadProgressBar.style.width = percentComplete + '%';
+                        uploadPercent.textContent = Math.round(percentComplete) + '%';
+                    }
+                });
+                
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        handleUploadSuccess(response);
+                    } else {
+                        handleUploadError(xhr);
+                    }
+                });
+                
+                xhr.addEventListener('error', function() {
+                    handleUploadError(xhr);
+                });
+                
+                xhr.open('POST', '/api/upload');
+                xhr.send(formData);
+                
+            } catch (error) {
+                handleUploadError(error);
+            }
+        }
+        
+        function handleUploadSuccess(response) {
+            // Скрываем прогресс
+            uploadProgress.classList.add('d-none');
+            
+            // Обновляем информацию
+            uploadedFileData = response;
+            
+            // Показываем кнопки действий
+            actionButtons.classList.remove('d-none');
+            uploadedFileInfo.textContent = 
+                `${response.original_filename} (${response.file_size_mb} MB)`;
+            
+            // Обновляем шаги
+            updateStep('step-upload', true);
+            
+            addToHistory('Загрузка', `Файл загружен: ${response.original_filename}`);
+            
+            // Скрываем информацию о файле
+            fileInfo.classList.add('d-none');
+        }
+        
+        function handleUploadError(error) {
+            uploadProgress.classList.add('d-none');
+            uploadBtn.disabled = false;
+            
+            let errorMessage = 'Ошибка при загрузке файла';
+            if (error.status === 413) {
+                errorMessage = 'Файл слишком большой. Максимальный размер: 2GB';
+            }
+            
+            alert(errorMessage);
+            addToHistory('Загрузка', errorMessage, false);
+        }
+        
+        // Транскрибация
+        transcribeBtn.addEventListener('click', startTranscription);
+        
+        async function startTranscription() {
+            if (!uploadedFileData) {
+                alert('Нет данных о загруженном файле');
+                return;
+            }
+            
+            // Показываем прогресс транскрибации
+            transcribeProgress.classList.remove('d-none');
+            actionButtons.classList.add('d-none');
+            
+            // Обновляем шаги
+            updateStep('step-transcribe', false);
+            
+            try {
+                const response = await fetch('/api/run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        unique_filename: uploadedFileData.unique_filename,
+                        date_folder: uploadedFileData.date_folder
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    handleTranscriptionSuccess(result);
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка транскрибации');
+                }
+                
+            } catch (error) {
+                handleTranscriptionError(error);
+            }
+        }
+        
+        function handleTranscriptionSuccess(result) {
+            // Скрываем прогресс
+            transcribeProgress.classList.add('d-none');
+            
+            // Сохраняем данные для скачивания
+            uploadedFileData.txt_filename = result.txt_filename;
+            uploadedFileData.download_url = result.download_url;
+            
+            // Показываем результат
+            resultSection.classList.remove('d-none');
+            
+            // Обновляем шаги
+            updateStep('step-transcribe', true);
+            updateStep('step-download', false);
+            
+            addToHistory('Транскрибация', 'Транскрибация завершена успешно');
+        }
+        
+        function handleTranscriptionError(error) {
+            transcribeProgress.classList.add('d-none');
+            actionButtons.classList.remove('d-none');
+            
+            alert('Ошибка при транскрибации: ' + error.message);
+            addToHistory('Транскрибация', error.message, false);
+        }
+        
+        // Скачивание результата
+        downloadBtn.addEventListener('click', downloadResult);
+        
+        function downloadResult() {
+            if (!uploadedFileData || !uploadedFileData.download_url) {
+                alert('Нет данных для скачивания');
+                return;
+            }
+            
+            // Создаем временную ссылку для скачивания
+            const link = document.createElement('a');
+            link.href = uploadedFileData.download_url;
+            link.download = uploadedFileData.txt_filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Обновляем шаги
+            updateStep('step-download', true);
+            
+            addToHistory('Скачивание', `Скачан файл: ${uploadedFileData.txt_filename}`);
+        }
+        
+        // Новая загрузка
+        newFileBtn.addEventListener('click', startNewUpload);
+        cancelBtn.addEventListener('click', startNewUpload);
+        
+        function startNewUpload() {
+            // Сброс состояния
+            currentFile = null;
+            uploadedFileData = null;
+            
+            // Скрываем все элементы
+            fileInfo.classList.add('d-none');
+            actionButtons.classList.add('d-none');
+            resultSection.classList.add('d-none');
+            transcribeProgress.classList.add('d-none');
+            
+            // Сбрасываем шаги
+            updateStep('step-upload', false);
+            updateStep('step-transcribe', false);
+            updateStep('step-download', false);
+            
+            // Сбрасываем input файла
+            fileInput.value = '';
+            
+            addToHistory('Система', 'Начата новая загрузка');
+        }
+        
+        // Проверка статуса сервера
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('/health_check');
+                if (response.ok) {
+                    console.log('Сервер доступен');
+                }
+            } catch (error) {
+                console.error('Сервер недоступен');
+            }
+        }
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServerStatus();
+            addToHistory('Система', 'Приложение запущено');
+        });
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

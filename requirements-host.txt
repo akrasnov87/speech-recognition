@@ -1,0 +1,5 @@
+faster-whisper==1.1.1
+dotenv==0.9.9
+flask==3.1.1
+gunicorn==23.0.0
+requests==2.32.5

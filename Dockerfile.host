@@ -1,0 +1,33 @@
+FROM ubuntu:22.04
+
+ARG DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
+ARG MODE=whisper
+ARG SCRIPT_MODE=app-fasted.py
+
+RUN apt update && apt upgrade -y
+RUN apt install --no-install-recommends python3 python3-pip python3-venv ffmpeg -y
+
+RUN pip3 install --upgrade pip
+
+COPY ./requirements-${MODE}.txt /app/requirements.txt
+COPY ./app-whisper.py /app/app-whisper.py
+COPY ./app-${MODE}.py /app/app.py
+COPY ./templates /app/templates
+
+WORKDIR /app
+
+RUN pip3 install -r requirements.txt
+
+COPY ./datasets/ /data/
+RUN ffmpeg -i /data/video.mp4 /data/audio.wav
+COPY ./.env.whisper /app/.env
+RUN python3 /app/app-whisper.py
+RUN rm /app/.env
+RUN rm -rf /data
+
+RUN apt clean
+RUN rm -rf /var/lib/apt/lists/*
+
+VOLUME /uploads
+
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]

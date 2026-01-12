@@ -54,6 +54,14 @@ docker run -it --rm --env-file ./.env.whisper --name video2text -v ./data:/data:
 docker run -it --rm --env-file ./.env.pyannote --name video2text -v ./data:/data:rw akrasnov87/video2text:pyannote-0.0.1
 </pre>
 
+### Сборка host
+
+`docker build -f Dockerfile.host --build-arg MODE=host -t akrasnov87/video2text:host-1.0.0 .`
+
+#### Использование
+
+`docker run -it --rm --env-file ./.env.host --name video2text -v ./uploads:/uploads:rw -p 5000:5000 akrasnov87/video2text:host-1.0.0`
+
 ### Переменные
 
 * SCRIPT_NAME: str - скрипт запуска `app` или `app-fasted`;
