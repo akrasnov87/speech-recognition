@@ -845,7 +845,7 @@
             }
         }
         
-        // Отображение прогресса транскрибации
+        // Обновленная функция displayTranscriptionProgress:
         function displayTranscriptionProgress(progressData) {
             if (!progressData) return;
             
@@ -875,23 +875,69 @@
             segmentStatus.textContent = statusText;
             currentSegmentCard.style.borderLeftColor = statusColor;
             
-            // Обновляем счетчики
+            // Обновляем счетчики сегментов
             const processed = progressData.processed_segments || 0;
-            const total = progressData.total_segments || '?';
+            let totalDisplay;
+            let totalForProgress;
+            
+            if (progressData.status === 'processing') {
+                if (progressData.total_segments && progressData.total_segments > 0) {
+                    if (progressData.estimated_total) {
+                        totalDisplay = `~${progressData.total_segments}`;  // Оценка
+                    } else {
+                        totalDisplay = progressData.total_segments;  // Точное количество
+                    }
+                    totalForProgress = progressData.total_segments;
+                } else {
+                    // Если общее количество неизвестно, показываем только обработанные
+                    totalDisplay = `${processed}+`;
+                    totalForProgress = null;
+                }
+            } else if (progressData.status === 'completed') {
+                totalDisplay = progressData.total_segments || processed || '?';
+                totalForProgress = progressData.total_segments || processed;
+            } else {
+                totalDisplay = '?';
+                totalForProgress = null;
+            }
             
             processedCount.textContent = processed;
-            totalSegments.textContent = total;
+            totalSegments.textContent = totalDisplay;
             
             // Обновляем статистику
-            statsTotalSegments.textContent = total;
+            if (totalForProgress) {
+                statsTotalSegments.textContent = progressData.estimated_total ? 
+                    `~${totalForProgress}` : totalForProgress;
+            } else {
+                statsTotalSegments.textContent = `${processed}+`;
+            }
+            
             statsTotalLines.textContent = progressData.total_lines || 0;
-            statsProgress.textContent = progressData.progress ? `${progressData.progress}%` : '0%';
+            
+            // Обновляем прогресс
+            if (progressData.status === 'completed') {
+                statsProgress.textContent = '100%';
+            } else if (totalForProgress && totalForProgress > 0) {
+                const currentProgress = Math.round((processed / totalForProgress) * 100);
+                statsProgress.textContent = `${currentProgress}%`;
+            } else {
+                statsProgress.textContent = '...';
+            }
             
             // Если есть данные о времени обработки
             if (progressData.duration) {
                 const minutes = Math.floor(progressData.duration / 60);
                 const seconds = Math.floor(progressData.duration % 60);
                 statsDuration.textContent = `${minutes > 0 ? `${minutes}м ` : ''}${seconds}с`;
+            } else if (progressData.start_time) {
+                // Показываем время с начала обработки
+                const startTime = new Date(progressData.start_time);
+                const elapsedSeconds = Math.floor((new Date() - startTime) / 1000);
+                const minutes = Math.floor(elapsedSeconds / 60);
+                const seconds = elapsedSeconds % 60;
+                statsDuration.textContent = `${minutes > 0 ? `${minutes}м ` : ''}${seconds}с`;
+            } else {
+                statsDuration.textContent = '0с';
             }
             
             // Отображаем последний обработанный сегмент

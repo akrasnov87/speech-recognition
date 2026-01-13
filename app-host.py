@@ -50,17 +50,32 @@ class TranscriptionProgress:
         self.lines = []
         self.status = "pending"  # pending, processing, completed, error
         self.progress = 0
-        self.total_segments = 0
+        self.total_segments = 0  # 0 означает "неизвестно"
         self.processed_segments = 0
+        self.estimated_total = False  # Флаг, что total_segments - оценка
         self.error_message = None
         self.start_time = None
         self.end_time = None
+        self.last_update_time = None
     
     def add_line(self, line):
         self.lines.append(line)
         self.processed_segments += 1
+        self.last_update_time = datetime.now()
+        
+        # Обновляем прогресс только если знаем общее количество
         if self.total_segments > 0:
             self.progress = int((self.processed_segments / self.total_segments) * 100)
+        else:
+            # Если общее количество неизвестно, прогресс можно оценить по времени
+            # или просто показывать количество обработанных
+            self.progress = 0
+    
+    def update_total_segments(self, total):
+        """Обновить общее количество сегментов (может быть оценкой)"""
+        self.total_segments = total
+        if self.processed_segments > 0 and total > 0:
+            self.progress = int((self.processed_segments / total) * 100)
     
     def to_dict(self):
         return {
@@ -68,15 +83,16 @@ class TranscriptionProgress:
             "status": self.status,
             "progress": self.progress,
             "total_segments": self.total_segments,
+            "estimated_total": self.estimated_total,
             "processed_segments": self.processed_segments,
-            "lines": self.lines[-100:],  # Последние 100 строк
+            "lines": self.lines[-50:],  # Последние 50 строк
             "total_lines": len(self.lines),
             "error_message": self.error_message,
             "start_time": self.start_time.isoformat() if self.start_time else None,
             "end_time": self.end_time.isoformat() if self.end_time else None,
+            "last_update_time": self.last_update_time.isoformat() if self.last_update_time else None,
             "duration": (self.end_time - self.start_time).total_seconds() if self.start_time and self.end_time else None
         }
-
 
 def transcribe_large_audio(
     input_path,
