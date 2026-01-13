@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG if os.getenv('LOG_LEVEL') == 'DEBUG' els
 logging.info(f'ENV_PATH={ENV_PATH}')
 
 WAV_FILE_PATH='data/audio.wav' if os.getenv('WAV_FILE_PATH') == None else os.getenv('WAV_FILE_PATH')
-WHISPER_MODEL='medium' if os.environ.get('WHISPER_MODEL') != None else os.environ.get('WHISPER_MODEL')
+WHISPER_MODEL = os.environ.get('WHISPER_MODEL', 'medium')
 
 logging.info(f'WAV_FILE_PATH={WAV_FILE_PATH}')
 logging.info(f'WHISPER_MODEL={WHISPER_MODEL}')

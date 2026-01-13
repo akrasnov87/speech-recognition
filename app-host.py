@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG if os.getenv('LOG_LEVEL') == 'DEBUG' els
 
 logging.info(f'ENV_PATH={ENV_PATH}')
 
-WHISPER_MODEL = 'medium' if os.environ.get('WHISPER_MODEL') != None else os.environ.get('WHISPER_MODEL')
+WHISPER_MODEL = os.environ.get('WHISPER_MODEL', 'medium')
 
 def seconds_to_hms(seconds):
     hours = seconds // 3600
@@ -335,6 +335,46 @@ def index():
 def health_check():
     return jsonify({"status": "success"})
 
+# Функция уже существует, оставляем как есть
+@app.route('/api/session/delete/<path:file_id>', methods=['DELETE'])
+def delete_session(file_id):
+    """Удалить конкретную сессию"""
+    try:
+        # Удаляем прогресс
+        TranscriptionProgress.remove_instance(file_id)
+        
+        # Также пытаемся удалить файлы если они существуют
+        parts = file_id.split('/')
+        files_removed = []
+        
+        if len(parts) >= 4:  # year/month/day/filename
+            year, month, day, filename = parts[0], parts[1], parts[2], parts[3]
+            
+            # Видео/аудио файл
+            video_path = os.path.join(app.config['UPLOAD_FOLDER'], year, month, day, filename)
+            if os.path.exists(video_path):
+                os.remove(video_path)
+                files_removed.append(video_path)
+            
+            # Текстовый файл (если есть)
+            txt_filename = filename.rsplit('.', 1)[0] + '.txt'
+            txt_path = os.path.join(app.config['UPLOAD_FOLDER'], year, month, day, txt_filename)
+            if os.path.exists(txt_path):
+                os.remove(txt_path)
+                files_removed.append(txt_path)
+        
+        return jsonify({
+            "message": f"Session {file_id} deleted",
+            "files_removed": files_removed,
+            "success": True
+        })
+    
+    except Exception as e:
+        logging.error(f"Error deleting session {file_id}: {str(e)}")
+        return jsonify({
+            "error": str(e),
+            "success": False
+        }), 500
 
 @app.route('/api/session/restore', methods=['GET'])
 def restore_session():
@@ -353,14 +393,18 @@ def restore_session():
                     
                     if os.path.exists(file_path):
                         active_transcriptions.append(progress.to_dict())
-                    else:
-                        # Файл был удален, очищаем прогресс
-                        TranscriptionProgress.remove_instance(file_id)
+        
+        # Сортируем по времени обновления (сначала самые новые)
+        active_transcriptions.sort(
+            key=lambda x: x.get('last_update_time') or x.get('start_time') or '',
+            reverse=True
+        )
         
         return jsonify({
             "active_transcriptions": active_transcriptions,
             "total": len(active_transcriptions)
         })
+    
     except Exception as e:
         logging.error(f"Session restore error: {str(e)}")
         return jsonify({"error": str(e)}), 500
