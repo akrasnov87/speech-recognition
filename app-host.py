@@ -328,7 +328,7 @@ def allowed_file(filename):
 @app.route('/')
 def index():
     """Главная страница с интерфейсом"""
-    return render_template('index.html')
+    return render_template('index.html', whisper_model=WHISPER_MODEL or "medium")
 
 
 @app.route('/health_check', methods=['GET'])
