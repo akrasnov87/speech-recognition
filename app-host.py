@@ -3,6 +3,8 @@ import uuid
 import logging
 import json
 from threading import Lock
+import pickle
+from pathlib import Path
 
 from flask import Flask, send_file, jsonify, request, abort, render_template
 from werkzeug.utils import secure_filename
@@ -31,12 +33,14 @@ class TranscriptionProgress:
     """Класс для отслеживания прогресса транскрибации"""
     _instances = {}
     _lock = Lock()
+    _state_file = 'transcription_state.pkl'
     
     @classmethod
     def get_instance(cls, file_id):
         with cls._lock:
             if file_id not in cls._instances:
                 cls._instances[file_id] = cls(file_id)
+                cls._load_state()
             return cls._instances[file_id]
     
     @classmethod
@@ -44,6 +48,69 @@ class TranscriptionProgress:
         with cls._lock:
             if file_id in cls._instances:
                 del cls._instances[file_id]
+                cls._save_state()
+    
+    @classmethod
+    def _save_state(cls):
+        """Сохранить состояние в файл"""
+        try:
+            with open(cls._state_file, 'wb') as f:
+                # Сохраняем только необходимые данные
+                state_data = {}
+                for file_id, progress in cls._instances.items():
+                    state_data[file_id] = {
+                        'lines': progress.lines,
+                        'status': progress.status,
+                        'progress': progress.progress,
+                        'total_segments': progress.total_segments,
+                        'estimated_total': progress.estimated_total,
+                        'processed_segments': progress.processed_segments,
+                        'error_message': progress.error_message,
+                        'start_time': progress.start_time,
+                        'end_time': progress.end_time,
+                        'last_update_time': progress.last_update_time,
+                        'txt_filename': getattr(progress, 'txt_filename', None),
+                        'original_filename': getattr(progress, 'original_filename', None),
+                        'file_size_mb': getattr(progress, 'file_size_mb', None),
+                        'upload_time': getattr(progress, 'upload_time', None)
+                    }
+                pickle.dump(state_data, f)
+        except Exception as e:
+            logging.error(f"Error saving state: {str(e)}")
+    
+    @classmethod
+    def _load_state(cls):
+        """Загрузить состояние из файла"""
+        try:
+            if os.path.exists(cls._state_file):
+                with open(cls._state_file, 'rb') as f:
+                    state_data = pickle.load(f)
+                    for file_id, data in state_data.items():
+                        if file_id not in cls._instances:
+                            progress = cls(file_id)
+                            progress.lines = data.get('lines', [])
+                            progress.status = data.get('status', 'pending')
+                            progress.progress = data.get('progress', 0)
+                            progress.total_segments = data.get('total_segments', 0)
+                            progress.estimated_total = data.get('estimated_total', False)
+                            progress.processed_segments = data.get('processed_segments', 0)
+                            progress.error_message = data.get('error_message', None)
+                            progress.start_time = data.get('start_time', None)
+                            progress.end_time = data.get('end_time', None)
+                            progress.last_update_time = data.get('last_update_time', None)
+                            
+                            if data.get('txt_filename'):
+                                progress.txt_filename = data['txt_filename']
+                            if data.get('original_filename'):
+                                progress.original_filename = data['original_filename']
+                            if data.get('file_size_mb'):
+                                progress.file_size_mb = data['file_size_mb']
+                            if data.get('upload_time'):
+                                progress.upload_time = data['upload_time']
+                            
+                            cls._instances[file_id] = progress
+        except Exception as e:
+            logging.error(f"Error loading state: {str(e)}")
     
     def __init__(self, file_id):
         self.file_id = file_id
@@ -57,6 +124,10 @@ class TranscriptionProgress:
         self.start_time = None
         self.end_time = None
         self.last_update_time = None
+        self.txt_filename = None
+        self.original_filename = None
+        self.file_size_mb = None
+        self.upload_time = None
     
     def add_line(self, line):
         self.lines.append(line)
@@ -70,15 +141,39 @@ class TranscriptionProgress:
             # Если общее количество неизвестно, прогресс можно оценить по времени
             # или просто показывать количество обработанных
             self.progress = 0
+        
+        # Сохраняем состояние после каждого обновления
+        self._save_state_async()
     
     def update_total_segments(self, total):
         """Обновить общее количество сегментов (может быть оценкой)"""
         self.total_segments = total
         if self.processed_segments > 0 and total > 0:
             self.progress = int((self.processed_segments / total) * 100)
+        self._save_state_async()
+    
+    def set_upload_info(self, original_filename, file_size_mb):
+        """Сохранить информацию о загруженном файле"""
+        self.original_filename = original_filename
+        self.file_size_mb = file_size_mb
+        self.upload_time = datetime.now()
+        self._save_state_async()
+    
+    def _save_state_async(self):
+        """Асинхронно сохранить состояние"""
+        def save():
+            try:
+                self.__class__._save_state()
+            except Exception as e:
+                logging.error(f"Async save error: {str(e)}")
+        
+        import threading
+        thread = threading.Thread(target=save)
+        thread.daemon = True
+        thread.start()
     
     def to_dict(self):
-        return {
+        result = {
             "file_id": self.file_id,
             "status": self.status,
             "progress": self.progress,
@@ -93,6 +188,24 @@ class TranscriptionProgress:
             "last_update_time": self.last_update_time.isoformat() if self.last_update_time else None,
             "duration": (self.end_time - self.start_time).total_seconds() if self.start_time and self.end_time else None
         }
+        
+        # Добавляем информацию о файле, если она есть
+        if self.original_filename:
+            result["original_filename"] = self.original_filename
+            result["file_size_mb"] = self.file_size_mb
+            result["upload_time"] = self.upload_time.isoformat() if self.upload_time else None
+        
+        # Если транскрибация завершена, добавляем информацию о файле
+        if self.status == "completed" and self.txt_filename:
+            result["txt_filename"] = self.txt_filename
+            # Получаем дату из file_id
+            parts = self.file_id.split('/')
+            if len(parts) >= 4:  # year/month/day/filename
+                year, month, day = parts[0], parts[1], parts[2]
+                result["download_url"] = f"/api/download/{year}/{month}/{day}/{self.txt_filename}"
+        
+        return result
+
 
 def transcribe_large_audio(
     input_path,
@@ -148,7 +261,11 @@ def transcribe_large_audio(
             # После обработки всех сегментов
             progress.total_segments = progress.processed_segments
             progress.status = "completed"
+            progress.txt_filename = f'{FILE_NAME}.txt'
             progress.end_time = datetime.now()
+            
+            # Сохраняем финальное состояние
+            progress._save_state_async()
             
         return f'{FILE_NAME}.txt'
     
@@ -156,6 +273,7 @@ def transcribe_large_audio(
         progress.status = "error"
         progress.error_message = str(e)
         progress.end_time = datetime.now()
+        progress._save_state_async()
         logging.error(f"Transcription error for {file_id}: {str(e)}")
         raise
 
@@ -169,6 +287,9 @@ app.config['ALLOWED_EXTENSIONS'] = {'webm', 'mkv', 'mp4', 'jpg', 'mp3', 'wav', '
 
 # Создаем папку для загрузок, если ее нет
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Загружаем сохраненное состояние при запуске
+TranscriptionProgress._load_state()
 
 
 @app.before_request
@@ -215,6 +336,36 @@ def health_check():
     return jsonify({"status": "success"})
 
 
+@app.route('/api/session/restore', methods=['GET'])
+def restore_session():
+    """Восстановить сессию пользователя"""
+    try:
+        # Получаем все активные транскрибации
+        active_transcriptions = []
+        
+        for file_id, progress in TranscriptionProgress._instances.items():
+            if progress.status in ['processing', 'completed', 'pending']:
+                # Проверяем, существует ли еще файл
+                parts = file_id.split('/')
+                if len(parts) >= 4:
+                    year, month, day, filename = parts[0], parts[1], parts[2], parts[3]
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], year, month, day, filename)
+                    
+                    if os.path.exists(file_path):
+                        active_transcriptions.append(progress.to_dict())
+                    else:
+                        # Файл был удален, очищаем прогресс
+                        TranscriptionProgress.remove_instance(file_id)
+        
+        return jsonify({
+            "active_transcriptions": active_transcriptions,
+            "total": len(active_transcriptions)
+        })
+    except Exception as e:
+        logging.error(f"Session restore error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     """Эндпоинт для загрузки файла"""
@@ -239,6 +390,11 @@ def upload_file():
         
         # Создаем уникальный ID для отслеживания прогресса
         file_id = f"{date_folder}/{uniq_name}"
+        
+        # Сохраняем информацию о загруженном файле в прогресс
+        progress = TranscriptionProgress.get_instance(file_id)
+        progress.set_upload_info(filename, round(file_size / (1024 * 1024), 2))
+        progress.status = "pending"
         
         return jsonify({
             "message": "File uploaded successfully",
@@ -274,6 +430,11 @@ def run_transcription():
         return jsonify({"error": "File not found"}), 404
     
     try:
+        # Обновляем статус прогресса
+        progress = TranscriptionProgress.get_instance(file_id)
+        progress.status = "processing"
+        progress.start_time = datetime.now()
+        
         # Запускаем транскрибацию в отдельном потоке
         import threading
         
@@ -285,9 +446,7 @@ def run_transcription():
                     model_size=WHISPER_MODEL or "medium"
                 )
                 
-                # Сохраняем имя файла в прогресс
-                progress = TranscriptionProgress.get_instance(file_id)
-                progress.txt_filename = txt_filename
+                logging.info(f"Transcription completed for {file_id}: {txt_filename}")
                 
             except Exception as e:
                 logging.error(f"Transcription thread error: {str(e)}")
@@ -313,28 +472,7 @@ def get_transcription_progress(file_id):
     """Получить прогресс транскрибации"""
     try:
         progress = TranscriptionProgress.get_instance(file_id)
-        
-        response = {
-            "file_id": file_id,
-            "status": progress.status,
-            "progress": progress.progress,
-            "total_segments": progress.total_segments,
-            "processed_segments": progress.processed_segments,
-            "lines": progress.lines[-50:],  # Последние 50 строк
-            "total_lines": len(progress.lines),
-            "error_message": progress.error_message
-        }
-        
-        # Если транскрибация завершена, добавляем информацию о файле
-        if progress.status == "completed" and hasattr(progress, 'txt_filename'):
-            # Получаем дату из file_id
-            parts = file_id.split('/')
-            if len(parts) >= 4:  # year/month/day/filename
-                year, month, day = parts[0], parts[1], parts[2]
-                response["txt_filename"] = progress.txt_filename
-                response["download_url"] = f"/api/download/{year}/{month}/{day}/{progress.txt_filename}"
-        
-        return jsonify(response)
+        return jsonify(progress.to_dict())
     
     except KeyError:
         return jsonify({
@@ -393,7 +531,21 @@ def cleanup_progress():
             TranscriptionProgress.remove_instance(file_id)
             return jsonify({"message": f"Progress for {file_id} cleaned up"})
         else:
-            return jsonify({"error": "file_id required"}), 400
+            # Очистка старых записей (старше 24 часов)
+            import time
+            current_time = datetime.now()
+            
+            to_remove = []
+            for fid, progress in TranscriptionProgress._instances.items():
+                if progress.last_update_time:
+                    time_diff = (current_time - progress.last_update_time).total_seconds()
+                    if time_diff > 24 * 3600:  # 24 часа
+                        to_remove.append(fid)
+            
+            for fid in to_remove:
+                TranscriptionProgress.remove_instance(fid)
+            
+            return jsonify({"message": f"Cleaned up {len(to_remove)} old entries"})
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500

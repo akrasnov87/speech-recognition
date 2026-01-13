@@ -58,9 +58,17 @@ docker run -it --rm --env-file ./.env.pyannote --name video2text -v ./data:/data
 
 `docker build -f Dockerfile.host --build-arg MODE=host -t akrasnov87/video2text:host-1.0.0 .`
 
+При сборке можно в `.env.whisper` указать в `WHISPER_MODEL` одну из моделей https://huggingface.co/openai/whisper-large
+
+
 #### Использование
 
 `docker run -it --rm --env-file ./.env.host --name video2text -v ./uploads:/uploads:rw -p 5000:5000 akrasnov87/video2text:host-1.0.0`
+
+Где в `.env.host`:
+<pre>
+WHISPER_MODEL='medium'
+</pre>
 
 ### Переменные
 

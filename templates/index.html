@@ -373,6 +373,17 @@
         .auto-scroll-btn:hover {
             transform: scale(1.1);
         }
+
+        /* Добавьте в секцию стилей */
+        .btn-outline-info {
+            border-color: var(--info-color);
+            color: var(--info-color);
+        }
+
+        .btn-outline-info:hover {
+            background-color: var(--info-color);
+            color: white;
+        }
         
         @media (max-width: 768px) {
             .container {
@@ -611,9 +622,14 @@
                             </div>
                         </div>
                         
-                        <!-- История операций -->
+                        <!-- Добавьте этот код в разделе истории операций -->
                         <div class="mt-5">
-                            <h5><i class="fas fa-history me-2"></i>История операций</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0"><i class="fas fa-history me-2"></i>История операций</h5>
+                                <button id="restoreSessionBtn" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-history me-2"></i>Восстановить сессию
+                                </button>
+                            </div>
                             <div id="historyList" class="mt-3">
                                 <!-- История будет добавляться здесь -->
                             </div>
@@ -680,6 +696,121 @@
         const statsProgress = document.getElementById('statsProgress');
         const statsDuration = document.getElementById('statsDuration');
         
+        // Восстановление сессии при загрузке
+        async function restoreSession() {
+            try {
+                const response = await fetch('/api/session/restore');
+                if (response.ok) {
+                    const sessionData = await response.json();
+                    
+                    if (sessionData.active_transcriptions && sessionData.active_transcriptions.length > 0) {
+                        // Находим самую свежую транскрибацию
+                        const latestTranscription = sessionData.active_transcriptions
+                            .sort((a, b) => new Date(b.last_update_time || 0) - new Date(a.last_update_time || 0))[0];
+                        
+                        if (latestTranscription) {
+                            // Восстанавливаем состояние
+                            currentFileId = latestTranscription.file_id;
+                            
+                            // Восстанавливаем информацию о файле
+                            if (latestTranscription.original_filename) {
+                                uploadedFileData = {
+                                    original_filename: latestTranscription.original_filename,
+                                    file_size_mb: latestTranscription.file_size_mb,
+                                    file_id: latestTranscription.file_id,
+                                    txt_filename: latestTranscription.txt_filename,
+                                    download_url: latestTranscription.download_url
+                                };
+                                
+                                // Отображаем восстановленные данные
+                                await handleRestoredSession(latestTranscription);
+                                
+                                addToHistory('Восстановление', 
+                                    `Сессия восстановлена: ${latestTranscription.original_filename}`);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('Нет сохраненной сессии или ошибка восстановления:', error);
+            }
+        }
+
+        // Обработка восстановленной сессии
+        async function handleRestoredSession(progressData) {
+            // Обновляем информацию о файле
+            uploadedFileInfo.textContent = 
+                `${progressData.original_filename} (${progressData.file_size_mb} MB)`;
+            
+            // Показываем соответствующие элементы интерфейса
+            if (progressData.status === 'pending') {
+                // Файл загружен, но транскрибация не запущена
+                actionButtons.classList.remove('d-none');
+                fileInfo.classList.add('d-none');
+                updateStep('step-upload', true);
+                
+            } else if (progressData.status === 'processing' || progressData.status === 'completed') {
+                // Транскрибация в процессе или завершена
+                actionButtons.classList.add('d-none');
+                transcriptionProgressSection.classList.remove('d-none');
+                
+                // Восстанавливаем историю сегментов
+                if (progressData.lines && progressData.lines.length > 0) {
+                    processedSegments = progressData.lines.map(line => parseSegmentLine(line));
+                    updateHistoryDisplaySection();
+                }
+                
+                // Обновляем отображение прогресса
+                displayTranscriptionProgress(progressData);
+                
+                if (progressData.status === 'processing') {
+                    // Запускаем обновление прогресса
+                    startProgressUpdates();
+                    updateStep('step-transcribe', false);
+                } else if (progressData.status === 'completed') {
+                    // Показываем результат
+                    resultSection.classList.remove('d-none');
+                    updateStep('step-transcribe', true);
+                    updateStep('step-download', false);
+                }
+                
+            } else if (progressData.status === 'error') {
+                // Была ошибка, показываем кнопки действий
+                actionButtons.classList.remove('d-none');
+                addToHistory('Восстановление', 
+                    `Обнаружена ошибка в предыдущей сессии: ${progressData.error_message || 'Неизвестная ошибка'}`, 
+                    false);
+            }
+        }
+
+        // Восстанавливаем историю сегментов из данных прогресса
+        function restoreSegmentsHistory(segmentsData) {
+            historyItems.innerHTML = '';
+            processedSegments = [];
+            
+            if (segmentsData && segmentsData.length > 0) {
+                // Обрабатываем сегменты в правильном порядке
+                segmentsData.forEach(line => {
+                    const parsed = parseSegmentLine(line);
+                    processedSegments.push(parsed);
+                    
+                    // Добавляем в историю
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <div class="history-time">
+                            <i class="far fa-clock me-1"></i>
+                            ${parsed.startTime} → ${parsed.endTime}
+                        </div>
+                        <div class="history-text">${parsed.text}</div>
+                    `;
+                    historyItems.appendChild(historyItem);
+                });
+                
+                historyCount.textContent = processedSegments.length;
+            }
+        }
+
         // Обновление шагов
         function updateStep(stepId, completed) {
             const step = document.getElementById(stepId);
@@ -1359,8 +1490,22 @@
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
             checkServerStatus();
+            restoreSession(); // Восстанавливаем сессию при загрузке
             addToHistory('Система', 'Приложение запущено');
         });
+
+        // Также добавьте эту функцию для кнопки восстановления в интерфейс:
+        function createRestoreButton() {
+            const restoreBtn = document.createElement('button');
+            restoreBtn.id = 'restoreSessionBtn';
+            restoreBtn.className = 'btn btn-outline-info btn-sm mt-3 d-none';
+            restoreBtn.innerHTML = '<i class="fas fa-history me-2"></i>Восстановить последнюю сессию';
+            restoreBtn.onclick = restoreSession;
+            
+            // Добавляем кнопку в историю операций
+            const historySection = document.querySelector('.mt-5');
+            historySection.insertBefore(restoreBtn, historySection.firstChild);
+        }
     </script>
     
     <!-- Bootstrap JS -->
