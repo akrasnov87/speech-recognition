@@ -6,3 +6,4 @@ temp
 whisper
 !datasets/*.mp4
 uploads
+*.pkl

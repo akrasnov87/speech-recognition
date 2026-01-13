@@ -467,14 +467,28 @@ def run_transcription():
         return jsonify({"error": str(e)}), 500
 
 
+# В начале каждой функции обработки запроса добавляем лог
 @app.route('/api/progress/<path:file_id>', methods=['GET'])
 def get_transcription_progress(file_id):
     """Получить прогресс транскрибации"""
+    logging.debug(f"Progress request for: {file_id}")
+    
     try:
         progress = TranscriptionProgress.get_instance(file_id)
-        return jsonify(progress.to_dict())
+        
+        # Логируем состояние
+        logging.debug(f"Progress state for {file_id}: status={progress.status}, "
+                     f"processed={progress.processed_segments}, total={progress.total_segments}")
+        
+        response = progress.to_dict()
+        
+        # Добавляем timestamp для клиента
+        response["server_time"] = datetime.now().isoformat()
+        
+        return jsonify(response)
     
     except KeyError:
+        logging.warning(f"Progress not found for: {file_id}")
         return jsonify({
             "error": "Transcription not found",
             "file_id": file_id,
@@ -520,16 +534,38 @@ def check_file_exists(year, month, day, name):
         return jsonify({"error": str(e)}), 500
 
 
+# Обновляем функцию cleanup_progress
 @app.route('/api/cleanup', methods=['POST'])
 def cleanup_progress():
     """Очистка старых записей прогресса"""
     try:
         data = request.json
         file_id = data.get('file_id')
+        force = data.get('force', False)  # Новый параметр для принудительной очистки
         
         if file_id:
-            TranscriptionProgress.remove_instance(file_id)
-            return jsonify({"message": f"Progress for {file_id} cleaned up"})
+            # Если запрашивается принудительная очистка, удаляем сразу
+            if force:
+                TranscriptionProgress.remove_instance(file_id)
+                return jsonify({
+                    "message": f"Progress for {file_id} force cleaned up",
+                    "force": True
+                })
+            
+            # Стандартная логика: удаляем только если транскрибация завершена
+            progress = TranscriptionProgress.get_instance(file_id)
+            if progress.status in ['completed', 'error']:
+                TranscriptionProgress.remove_instance(file_id)
+                return jsonify({
+                    "message": f"Progress for {file_id} cleaned up",
+                    "status": progress.status
+                })
+            else:
+                return jsonify({
+                    "message": f"Progress for {file_id} not cleaned up - status is {progress.status}",
+                    "status": progress.status,
+                    "skip": True
+                })
         else:
             # Очистка старых записей (старше 24 часов)
             import time
@@ -541,11 +577,57 @@ def cleanup_progress():
                     time_diff = (current_time - progress.last_update_time).total_seconds()
                     if time_diff > 24 * 3600:  # 24 часа
                         to_remove.append(fid)
+                elif progress.status in ['completed', 'error']:
+                    # Удаляем завершенные без времени обновления
+                    to_remove.append(fid)
             
             for fid in to_remove:
                 TranscriptionProgress.remove_instance(fid)
             
-            return jsonify({"message": f"Cleaned up {len(to_remove)} old entries"})
+            return jsonify({
+                "message": f"Cleaned up {len(to_remove)} old entries",
+                "cleaned": to_remove
+            })
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Добавляем новый эндпоинт для полного сброса
+@app.route('/api/reset', methods=['POST'])
+def reset_session():
+    """Полный сброс сессии для текущего пользователя"""
+    try:
+        data = request.json
+        file_id = data.get('file_id')
+        
+        if file_id:
+            # Удаляем конкретный файл
+            TranscriptionProgress.remove_instance(file_id)
+            
+            # Также удаляем файл с диска
+            parts = file_id.split('/')
+            if len(parts) >= 4:
+                year, month, day, filename = parts[0], parts[1], parts[2], parts[3]
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], year, month, day, filename)
+                txt_path = file_path.replace(os.path.splitext(file_path)[1], '.txt')
+                
+                # Удаляем файлы если они существуют
+                files_removed = []
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    files_removed.append(file_path)
+                
+                if os.path.exists(txt_path):
+                    os.remove(txt_path)
+                    files_removed.append(txt_path)
+                
+                return jsonify({
+                    "message": f"Session for {file_id} fully reset",
+                    "files_removed": files_removed
+                })
+        
+        return jsonify({"error": "file_id required"}), 400
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
