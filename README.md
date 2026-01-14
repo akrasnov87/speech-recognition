@@ -39,11 +39,32 @@ ffmpeg -i video.mp4 audio.wav
 ## Docker
 
 ### Сборка whisper
-`docker build --build-arg MODE=whisper -t akrasnov87/video2text:whisper-0.0.1 .`
+`docker build --build-arg MODE=whisper -t akrasnov87/video2text:whisper-medium-1.0.0 .`
+
+При этом в файле .env.whisper должно быть:
+<pre>
+VIDEO_FILE=/data/video.webm
+WAV_FILE_PATH=/data/audio.wav
+WHISPER_MODEL='medium'
+</pre>
+
+Либо если нужна `large` модель:
+
+<pre>
+VIDEO_FILE=/data/video.webm
+WAV_FILE_PATH=/data/audio.wav
+WHISPER_MODEL='large'
+</pre>
 
 #### Использование
 <pre>
-docker run -it --rm --env-file ./.env.whisper --name video2text -v ./data:/data:rw akrasnov87/video2text:whisper-0.0.1
+docker run -it --rm --env-file ./.env.whisper --name video2text -v ./data:/data:rw akrasnov87/video2text:whisper-medium-1.0.0
+</pre>
+
+или
+
+<pre>
+docker run -it --rm --env-file ./.env.whisper --name video2text -v ./data:/data:rw akrasnov87/video2text:whisper-large-1.0.0
 </pre>
 
 ### Сборка pyannote

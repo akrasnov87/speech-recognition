@@ -18,6 +18,7 @@ WORKDIR /app
 
 RUN pip3 install -r requirements.txt
 
+# чтобы модель была загружена изначально в образ
 COPY ./datasets/ /data/
 RUN ffmpeg -i /data/video.mp4 /data/audio.wav
 COPY ./.env.whisper /app/.env
