@@ -1,4 +1,12 @@
 
+## [1.0.3] 2026.01.20
+
+* akrasnov87/video2text:host-medium-1.0.3
+
+### Fixed
+
+* увеличен таймаут для загрузки видеофайла до 3600 секунд.
+
 ## 2026.01.14
 
 * akrasnov87/video2text:whisper-medium-1.0.0
